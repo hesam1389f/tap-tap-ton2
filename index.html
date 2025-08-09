@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base target="_self">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tap Tap Ton</title>
+    <meta name="description" content="Earn money by tapping">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#3b82f6",
+                        secondary: "#ffffff"
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slow': 'bounce 2s infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
+    <header class="bg-primary text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold">Tap Tap Ton</h1>
+            <div class="flex items-center space-x-2">
+                <span id="user-id" class="text-sm bg-white text-primary px-2 py-1 rounded-full"></span>
+                <span id="daily-clicks" class="text-sm bg-white text-primary px-2 py-1 rounded-full">0/2000</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col items-center justify-center p-4">
+        <div class="text-center mb-8">
+            <h2 class="text-2xl font-bold text-primary mb-2">Your Balance</h2>
+            <p id="balance" class="text-4xl font-bold text-gray-800">0.0000000 TON</p>
+        </div>
+
+        <button id="tap-button" class="bg-primary text-white rounded-full w-32 h-32 flex items-center justify-center shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50 transition-all duration-300 transform hover:scale-105 active:scale-95 float-animation">
+            <i class="fas fa-hand-pointer text-4xl"></i>
+        </button>
+
+        <div class="mt-8 text-center">
+            <p class="text-gray-600 mb-4">Minimum withdrawal: 30 TON</p>
+            <button id="withdraw-btn" class="bg-blue-600 text-white px-6 py-2 rounded-full shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Withdraw</button>
+        </div>
+
+        <div class="mt-8 w-full max-w-md">
+            <div class="bg-white p-4 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold text-primary mb-2">Referral Program</h3>
+                <p class="text-gray-600 mb-4">Invite friends and earn 20% of their earnings!</p>
+                <div class="flex items-center bg-gray-100 p-2 rounded">
+                    <input id="referral-link" type="text" readonly class="flex-grow bg-transparent outline-none text-sm" value="Loading...">
+                    <button id="copy-btn" class="ml-2 bg-primary text-white px-3 py-1 rounded text-sm">Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 w-full max-w-md">
+            <div class="bg-white p-4 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold text-primary mb-2">How it works</h3>
+                <p class="text-gray-600">Earn money by tapping! Each tap gives you 0.0000001 TON. You can tap up to 2000 times per day. Invite friends to earn 20% of their earnings.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-primary text-white p-4 text-center text-sm">
+        <p>© 2023 Tap Tap Ton. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Generate unique user ID if not exists
+        let userId = localStorage.getItem('userId');
+        if (!userId) {
+            userId = 'user_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('userId', userId);
+        }
+        document.getElementById('user-id').textContent = `ID: ${userId.substring(0, 6)}`;
+
+        // Initialize balance
+        let balance = parseFloat(localStorage.getItem('balance')) || 0;
+        let todayClicks = parseInt(localStorage.getItem('todayClicks')) || 0;
+        const lastClickDate = localStorage.getItem('lastClickDate');
+        
+        // Reset daily clicks if it's a new day
+        if (lastClickDate !== new Date().toDateString()) {
+            todayClicks = 0;
+            localStorage.setItem('lastClickDate', new Date().toDateString());
+        }
+
+        // Update UI
+        document.getElementById('balance').textContent = balance.toFixed(7) + ' TON';
+        document.getElementById('daily-clicks').textContent = `${todayClicks}/2000`;
+        
+        // Generate referral link
+        const referralLink = `${window.location.origin}${window.location.pathname}?ref=${userId}`;
+        document.getElementById('referral-link').value = referralLink;
+
+        // Check if user came from referral
+        const urlParams = new URLSearchParams(window.location.search);
+        const referrerId = urlParams.get('ref');
+        if (referrerId && referrerId !== userId) {
+            localStorage.setItem('referrerId', referrerId);
+        }
+
+        // Tap button functionality
+        const tapButton = document.getElementById('tap-button');
+        const withdrawButton = document.getElementById('withdraw-btn');
+        
+        tapButton.addEventListener('click', () => {
+            if (todayClicks >= 2000) return;
+            
+            todayClicks++;
+            balance += 0.0000001;
+            
+            // If there's a referrer, add 20% to their balance
+            const referrerId = localStorage.getItem('referrerId');
+            if (referrerId) {
+                // In a real app, this would be handled server-side
+                console.log(`20% bonus would be added to referrer: ${referrerId}`);
+            }
+            
+            // Update storage
+            localStorage.setItem('balance', balance.toString());
+            localStorage.setItem('todayClicks', todayClicks.toString());
+            
+            // Update UI
+            document.getElementById('balance').textContent = balance.toFixed(7) + ' TON';
+            document.getElementById('daily-clicks').textContent = `${todayClicks}/2000`;
+            
+            // Enable withdraw button if balance >= 30
+            if (balance >= 30) {
+                withdrawButton.disabled = false;
+            }
+            
+            // Add click effect
+            tapButton.classList.add('animate-ping');
+            setTimeout(() => {
+                tapButton.classList.remove('animate-ping');
+            }, 300);
+        });
+
+        // Copy referral link
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            const referralInput = document.getElementById('referral-link');
+            referralInput.select();
+            document.execCommand('copy');
+            
+            const copyBtn = document.getElementById('copy-btn');
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => {
+                copyBtn.textContent = 'Copy';
+            }, 2000);
+        });
+
+        // Withdraw functionality
+        withdrawButton.addEventListener('click', () => {
+            if (balance >= 30) {
+                alert(`Withdrawal request for ${balance.toFixed(2)} TON has been submitted!`);
+                // In a real app, this would connect to a backend
+                balance = 0;
+                localStorage.setItem('balance', '0');
+                document.getElementById('balance').textContent = '0.0000000 TON';
+                withdrawButton.disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>
